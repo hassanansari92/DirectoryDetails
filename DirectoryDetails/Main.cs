@@ -18,13 +18,13 @@ namespace DirectoryDetails
     {
         //private string videoDirectory = @"C:\Hassan\Courses\Python\Complete Python Bootcamp HD";
         private MediaInfo mediaInfo;
+        private Dictionary<string, long> directorySizesCache = new Dictionary<string, long>();
+        private Dictionary<string, double> directoryDurationCache = new Dictionary<string, double>();
 
         public Main()
         {
             InitializeComponent();
         }
-
-
         private async Task LoadVideoFilesAsync(string directoryPath)
         {
             tvControl.Nodes.Clear();
@@ -32,7 +32,6 @@ namespace DirectoryDetails
 
             await TraverseDirectoriesAsync(directoryInfo, tvControl.Nodes);
         }
-
         private async Task TraverseDirectoriesAsync(DirectoryInfo directory, TreeNodeCollection parentNodes)
         {
             double fileSize = 0;
@@ -56,7 +55,9 @@ namespace DirectoryDetails
                 await TraverseDirectoriesAsync(subDirectory, directoryNode.Nodes);
             }
 
-            foreach (var fileInfo in directory.GetFiles("*.*").Where(file => file.Extension.ToLower() == ".mp4" || file.Extension.ToLower() == ".avi" || file.Extension.ToLower() == ".mkv"))
+            var files = directory.GetFiles("*.*").Where(file => file.Extension.ToLower() == ".mp4" || file.Extension.ToLower() == ".avi" || file.Extension.ToLower() == ".m4v" || file.Extension.ToLower() == ".mkv");
+
+            foreach (var fileInfo in files)
             {
                 TimeSpan videoLength = await GetVideoLengthAsync(fileInfo.FullName);
                 double size = fileInfo.FullName.Length / (1024 * 1024);
@@ -70,12 +71,16 @@ namespace DirectoryDetails
                 parentNodes.Add(fileNode);
             }
         }
-
         public double CalculateDirectoryDuration(string directoryPath)
         {
             if (!Directory.Exists(directoryPath))
             {
                 throw new DirectoryNotFoundException("Directory not found.");
+            }
+
+            if (directoryDurationCache.ContainsKey(directoryPath))
+            {
+                return directoryDurationCache[directoryPath];
             }
 
             double totalDuration = 0;
@@ -102,14 +107,19 @@ namespace DirectoryDetails
                 totalDuration += CalculateDirectoryDuration(subDirectory); // Recursively calculate nested subdirectory sizes
             }
 
+            directoryDurationCache[directoryPath] = totalDuration; // Store calculated duration in cache
             return totalDuration;
         }
-
         public long CalculateDirectorySize(string directoryPath)
         {
             if (!Directory.Exists(directoryPath))
             {
                 throw new DirectoryNotFoundException("Directory not found.");
+            }
+
+            if (directorySizesCache.ContainsKey(directoryPath))
+            {
+                return directorySizesCache[directoryPath];
             }
 
             long totalSize = 0;
@@ -129,16 +139,17 @@ namespace DirectoryDetails
                 totalSize += CalculateDirectorySize(subDirectory); // Recursively calculate nested subdirectory sizes
             }
 
+            directorySizesCache[directoryPath] = totalSize; // Store calculated size in cache
             return totalSize;
         }
-        private async void tvControl_AfterSelect(object sender, TreeViewEventArgs e)
+        private void tvControl_AfterSelect(object sender, TreeViewEventArgs e)
         {
             if (e.Node != null)
             {
                 string filePath = e.Node.Tag as string;
                 if (!string.IsNullOrEmpty(filePath))
                 {
-                    TimeSpan videoLength = await GetVideoLengthAsync(filePath);
+                    //TimeSpan videoLength = await GetVideoLengthAsync(filePath);
 
                     //fileSizeLabel.Text = $"File Size: {new FileInfo(filePath).Length / (1024 * 1024)} MB";
                     //videoLengthLabel.Text = $"Video Length: {videoLength.TotalHours:F2} hours";
@@ -150,7 +161,6 @@ namespace DirectoryDetails
                 }
             }
         }
-
         private async Task<TimeSpan> GetVideoLengthAsync(string filePath)
         {
             return await Task.Run(() =>
@@ -168,24 +178,20 @@ namespace DirectoryDetails
                 return TimeSpan.Zero;
             });
         }
-
-        private void tvControl_DoubleClick(object sender, EventArgs e)
-        {
-        }
-
-        private void tvControl_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
-        {
-            string filePath = e.Node.Tag as string;
-            Process.Start(filePath);
-        }
-
-        private void btnSelect_Click(object sender, EventArgs e)
+        private async void btnSelect_Click(object sender, EventArgs e)
         {
             if (fbd.ShowDialog() == DialogResult.OK)
             {
                 txtPath.Text = fbd.SelectedPath;
-                LoadVideoFilesAsync(fbd.SelectedPath);
+                await LoadVideoFilesAsync(fbd.SelectedPath);
+
+                MessageBox.Show("Completed", "", MessageBoxButtons.OK);
             }
+        }
+        private void tvControl_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            string filePath = tvControl.SelectedNode.Tag as string;
+            Process.Start(filePath);
         }
     }
 }

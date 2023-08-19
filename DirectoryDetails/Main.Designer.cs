@@ -44,8 +44,7 @@ namespace DirectoryDetails
             this.tvControl.Size = new System.Drawing.Size(838, 616);
             this.tvControl.TabIndex = 0;
             this.tvControl.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.tvControl_AfterSelect);
-            this.tvControl.NodeMouseDoubleClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.tvControl_NodeMouseDoubleClick);
-            this.tvControl.DoubleClick += new System.EventHandler(this.tvControl_DoubleClick);
+            this.tvControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.tvControl_MouseDoubleClick);
             // 
             // btnSelect
             // 
@@ -69,7 +68,7 @@ namespace DirectoryDetails
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(46, 49);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(108, 17);
+            this.label1.Size = new System.Drawing.Size(102, 16);
             this.label1.TabIndex = 3;
             this.label1.Text = "Select Directory";
             // 
@@ -82,6 +81,8 @@ namespace DirectoryDetails
             this.Controls.Add(this.txtPath);
             this.Controls.Add(this.btnSelect);
             this.Controls.Add(this.tvControl);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
             this.Name = "Main";
             this.Text = "Form1";
             this.ResumeLayout(false);
